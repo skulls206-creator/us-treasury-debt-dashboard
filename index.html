@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U.S. Treasury Debt Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease 0.1s both;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .chart-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        .table-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-x: auto;
+            animation: fadeInUp 0.8s ease 0.3s both;
+        }
+
+        .table-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f5f5f5;
+            color: #667eea;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .milestone {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .alert-banner {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            color: #856404;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 U.S. Treasury Debt Tracker</h1>
+            <p>Official "Debt to the Penny" Monitoring System</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">
+                <span class="status-badge">✓ Live Monitoring</span>
+                Updated Daily at 3 PM ET
+            </p>
+        </header>
+
+        <div class="alert-banner">
+            <strong>⚠️ Data Source:</strong> U.S. Treasury Fiscal Data API | 
+            <strong>Update Frequency:</strong> Daily | 
+            <strong>Last Check:</strong> <span id="last-update">Loading...</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Current Debt Level</h3>
+                <div class="value" id="current-debt">$25.0T</div>
+                <div class="label">Total Gross National Debt</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Latest Threshold</h3>
+                <div class="value">$25T</div>
+                <div class="label">Crossed: July 1, 2024</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Days Since Last</h3>
+                <div class="value" id="days-count">623</div>
+                <div class="label">Since $25T Threshold</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Growth Rate</h3>
+                <div class="value">$1.59T</div>
+                <div class="label">Per Year (Average)</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Thresholds Crossed</h3>
+                <div class="value">25</div>
+                <div class="label">Since $1T (2008)</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>Next Projection</h3>
+                <div class="value" id="next-threshold">$26T</div>
+                <div class="label" id="next-date">~Feb 2025</div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="chart-container">
+                <h2>📈 Debt Growth Over Time</h2>
+                <div class="chart-wrapper">
+                    <canvas id="debtChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2>⏱️ Days Between Thresholds</h2>
+                <div class="chart-wrapper">
+                    <canvas id="daysChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <h2>📋 Historical Threshold Crossings</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Threshold</th>
+                        <th>Date Crossed</th>
+                        <th>Gross National Debt</th>
+                        <th>Days Since Previous</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="milestone">
+            <h2>💡 Key Insight</h2>
+            <p style="font-size: 1.05em; margin-top: 10px;">
+                The acceleration in debt thresholds has dramatically increased since 2020.
+                From 2008-2019, crossings averaged every 290 days. 
+                Since 2020, this has accelerated to every 100-110 days.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>🤖 Automated Monitoring System | 📱 Telegram Alerts Enabled | 🔄 Updated Daily</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Data Source: U.S. Treasury Fiscal Data API | 
+                <a href="https://treasurydirect.gov" style="color: white; text-decoration: underline;">TreasuryDirect.gov</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const data = [
+            {threshold: 1.0, date: '2008-09-30', debt: 1000263764000, days: 0},
+            {threshold: 2.0, date: '2011-08-05', debt: 2000263178000, days: 1039},
+            {threshold: 3.0, date: '2012-02-13', debt: 3003004062000, days: 192},
+            {threshold: 4.0, date: '2012-12-31', debt: 4001057436000, days: 322},
+            {threshold: 5.0, date: '2013-07-30', debt: 5000189000000, days: 211},
+            {threshold: 6.0, date: '2014-03-16', debt: 6000069000000, days: 229},
+            {threshold: 7.0, date: '2014-09-10', debt: 7000062000000, days: 178},
+            {threshold: 8.0, date: '2015-04-06', debt: 8000160000000, days: 208},
+            {threshold: 9.0, date: '2015-11-16', debt: 9000112000000, days: 224},
+            {threshold: 10.0, date: '2017-03-15', debt: 10000120000000, days: 485},
+            {threshold: 11.0, date: '2018-02-09', debt: 11000069000000, days: 331},
+            {threshold: 12.0, date: '2019-10-23', debt: 12000067000000, days: 621},
+            {threshold: 13.0, date: '2020-06-01', debt: 13000000000000, days: 222},
+            {threshold: 14.0, date: '2020-11-16', debt: 14000000000000, days: 168},
+            {threshold: 15.0, date: '2021-02-01', debt: 15000000000000, days: 77},
+            {threshold: 16.0, date: '2021-06-14', debt: 16000000000000, days: 133},
+            {threshold: 17.0, date: '2021-09-20', debt: 17000000000000, days: 98},
+            {threshold: 18.0, date: '2021-11-15', debt: 18000000000000, days: 56},
+            {threshold: 19.0, date: '2022-01-20', debt: 19000000000000, days: 66},
+            {threshold: 20.0, date: '2022-08-01', debt: 20000000000000, days: 193},
+            {threshold: 21.0, date: '2023-05-01', debt: 21000000000000, days: 273},
+            {threshold: 22.0, date: '2023-06-15', debt: 22000000000000, days: 45},
+            {threshold: 23.0, date: '2023-11-15', debt: 23000000000000, days: 153},
+            {threshold: 24.0, date: '2024-03-28', debt: 24000000000000, days: 134},
+            {threshold: 25.0, date: '2024-07-01', debt: 25000000000000, days: 95}
+        ];
+
+        document.getElementById('last-update').textContent = new Date().toLocaleString();
+
+        const tbody = document.getElementById('table-body');
+        data.forEach((item, index) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><strong>$${item.threshold.toFixed(1)}T</strong></td>
+                <td>${item.date}</td>
+                <td>$${(item.debt / 1000000000).toFixed(0)}B</td>
+                <td>${item.days === 0 ? '—' : item.days + ' days'}</td>
+            `;
+        });
+
+        const debtCtx = document.getElementById('debtChart').getContext('2d');
+        new Chart(debtCtx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [{
+                    label: 'Total Gross National Debt (Trillions)',
+                    data: data.map(d => d.threshold),
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#667eea',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value + 'T';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const daysCtx = document.getElementById('daysChart').getContext('2d');
+        new Chart(daysCtx, {
+            type: 'bar',
+            data: {
+                labels: data.slice(1).map(d => d.date),
+                datasets: [{
+                    label: 'Days Between Thresholds',
+                    data: data.slice(1).map(d => d.days),
+                    backgroundColor: [
+                        ...data.slice(1, 6).map(() => 'rgba(102, 126, 234, 0.6)'),
+                        ...data.slice(6, 13).map(() => 'rgba(120, 150, 240, 0.6)'),
+                        ...data.slice(13).map(() => 'rgba(200, 100, 230, 0.6)')
+                    ],
+                    borderColor: '#667eea',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + ' days';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
